@@ -1,0 +1,41 @@
+
+Benchmark                      (encoding)  (length)   Mode  Cnt         Score         Error  Units
+BufferUtf8Benchmark.writeUtf8       ascii        20  thrpt    5  25534224.654 ±  608223.213  ops/s
+BufferUtf8Benchmark.writeUtf8      sparse        20  thrpt    5  16842386.849 ±  662694.568  ops/s
+BufferUtf8Benchmark.writeUtf8        utf8        20  thrpt    5  10013588.524 ±  375423.039  ops/s
+
+BufferUtf8Benchmark.writeUtf8       ascii      2000  thrpt    5   1067405.292 ±   23481.356  ops/s
+BufferUtf8Benchmark.writeUtf8      sparse      2000  thrpt    5   1339771.695 ±   52795.217  ops/s
+BufferUtf8Benchmark.writeUtf8        utf8      2000  thrpt    5    108404.041 ±    2880.219  ops/s
+
+BufferUtf8Benchmark.writeUtf8       ascii    200000  thrpt    5     10079.949 ±     516.599  ops/s
+BufferUtf8Benchmark.writeUtf8      sparse    200000  thrpt    5      7652.876 ±     907.556  ops/s
+BufferUtf8Benchmark.writeUtf8        utf8    200000  thrpt    5      1166.636 ±      48.256  ops/s
+
+
+BufferUtf8Benchmark.writeUtf8       ascii        20  thrpt    3  26475575.909 ± 2529621.572  ops/s
+BufferUtf8Benchmark.writeUtf8      sparse        20  thrpt    3  15851835.160 ± 1847353.454  ops/s
+BufferUtf8Benchmark.writeUtf8        utf8        20  thrpt    3  11208726.014 ± 1655118.831  ops/s
+
+BufferUtf8Benchmark.writeUtf8       ascii      2000  thrpt    3   1081815.309 ±  159993.542  ops/s
+BufferUtf8Benchmark.writeUtf8      sparse      2000  thrpt    3   1364290.166 ±  149249.429  ops/s
+BufferUtf8Benchmark.writeUtf8        utf8      2000  thrpt    3    108299.115 ±   23858.443  ops/s
+
+BufferUtf8Benchmark.writeUtf8       ascii    200000  thrpt    3     10249.168 ±     923.549  ops/s
+BufferUtf8Benchmark.writeUtf8      sparse    200000  thrpt    3      7779.367 ±    1397.177  ops/s
+BufferUtf8Benchmark.writeUtf8        utf8    200000  thrpt    3      1186.782 ±     478.512  ops/s
+
+
+AFTER
+
+BufferUtf8Benchmark.writeUtf8       ascii        20  thrpt    3  15921418.519 ± 1552327.208  ops/s
+BufferUtf8Benchmark.writeUtf8      sparse        20  thrpt    3  10542392.853 ± 1648536.428  ops/s
+BufferUtf8Benchmark.writeUtf8        utf8        20  thrpt    3   9091085.725 ± 1174118.458  ops/s
+
+BufferUtf8Benchmark.writeUtf8       ascii      2000  thrpt    3    845214.925 ±   57547.864  ops/s
+BufferUtf8Benchmark.writeUtf8      sparse      2000  thrpt    3    225171.838 ±   20267.861  ops/s
+BufferUtf8Benchmark.writeUtf8        utf8      2000  thrpt    3    147245.593 ±   10899.151  ops/s
+
+BufferUtf8Benchmark.writeUtf8       ascii    200000  thrpt    3      2300.033 ±     341.437  ops/s
+BufferUtf8Benchmark.writeUtf8      sparse    200000  thrpt    3      1940.610 ±     372.551  ops/s
+BufferUtf8Benchmark.writeUtf8        utf8    200000  thrpt    3      1290.253 ±     311.450  ops/s

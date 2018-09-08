@@ -19,7 +19,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
+import okio.Buffer;
+import okio.ByteString;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -34,12 +35,9 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.runner.RunnerException;
 
-import okio.Buffer;
-import okio.ByteString;
-
 @Fork(1)
-@Warmup(iterations = 5, time = 2)
-@Measurement(iterations = 5, time = 2)
+@Warmup(iterations = 2, time = 2)
+@Measurement(iterations = 3, time = 2)
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
@@ -77,14 +75,14 @@ public class BufferUtf8Benchmark {
             + "packaged it, and slapped it on a plastic lunchbox, and now you're selling it, you wanna "
             + "sell it.");
 
-    strings.put("2bytes", "\u0080\u07ff");
-
-    strings.put("3bytes", "\u0800\ud7ff\ue000\uffff");
-
-    strings.put("4bytes", "\ud835\udeca");
-
-    // high surrogate, 'a', low surrogate, and 'a'
-    strings.put("bad", "\ud800\u0061\udc00\u0061");
+    //strings.put("2bytes", "\u0080\u07ff");
+    //
+    //strings.put("3bytes", "\u0800\ud7ff\ue000\uffff");
+    //
+    //strings.put("4bytes", "\ud835\udeca");
+    //
+    //// high surrogate, 'a', low surrogate, and 'a'
+    //strings.put("bad", "\ud800\u0061\udc00\u0061");
   }
 
   @Param({"20", "2000", "200000"})
@@ -122,7 +120,7 @@ public class BufferUtf8Benchmark {
     buffer.clear();
   }
 
-  @Benchmark
+  //@Benchmark
   public String readUtf8() {
     buffer.write(decode);
     return buffer.readUtf8();

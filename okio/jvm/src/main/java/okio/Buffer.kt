@@ -897,89 +897,88 @@ class Buffer : BufferedSource, BufferedSink, Cloneable, ByteChannel {
     require(beginIndex >= 0) { "beginIndex < 0: $beginIndex" }
     require(endIndex >= beginIndex) { "endIndex < beginIndex: $endIndex < $beginIndex" }
     require(endIndex <= string.length) { "endIndex > string.length: $endIndex > ${string.length}" }
+    if (beginIndex == endIndex) return this
+
+    var tail = writableSegment(4)
+    var data = tail.data
+    var tailLimit = tail.limit
+    var tailOriginalLimit = tailLimit
 
     // Transcode a UTF-16 Java String to UTF-8 bytes.
     var i = beginIndex
     while (i < endIndex) {
-      var c = string[i].toInt()
+      // If we can't fit this char into the current segment then get a new one.
+      if (tailLimit > WRITE_CODE_POINT_LIMIT) {
+        // Flush the limit local to the segment.
+        tail.limit = tailLimit
+        size += (tailLimit - tailOriginalLimit)
 
+        tail = writableSegment(4)
+        data = tail.data
+        tailLimit = tail.limit
+        tailOriginalLimit = tailLimit
+      }
+
+      var c = string[i++].toInt()
+
+      /* ktlint-disable no-multi-spaces */
       when {
         c < 0x80 -> {
-          val tail = writableSegment(1)
-          val data = tail.data
-          val segmentOffset = tail.limit - i
-          val runLimit = minOf(endIndex, Segment.SIZE - segmentOffset)
-
           // Emit a 7-bit character with 1 byte.
-          data[segmentOffset + i++] = c.toByte() // 0xxxxxxx
+          data[tailLimit++] = c.toByte() // 0xxxxxxx
 
-          // Fast-path contiguous runs of ASCII characters. This is ugly, but yields a ~4x performance
-          // improvement over independent calls to writeByte().
+          // Fast-path contiguous runs of ASCII characters. This is ugly, but yields a ~4x
+          // performance improvement over independent calls to writeByte().
+          val runLimit = minOf(endIndex, i + Segment.SIZE - tailLimit)
           while (i < runLimit) {
             c = string[i].toInt()
             if (c >= 0x80) break
-            data[segmentOffset + i++] = c.toByte() // 0xxxxxxx
+            data[tailLimit++] = c.toByte() // 0xxxxxxx
+            i++
           }
-
-          val runSize = i + segmentOffset - tail.limit // Equivalent to i - (previous i).
-          tail.limit += runSize
-          size += runSize.toLong()
         }
 
         c < 0x800 -> {
           // Emit a 11-bit character with 2 bytes.
-          val tail = writableSegment(2)
-          /* ktlint-disable no-multi-spaces */
-          tail.data[tail.limit    ] = (c shr 6          or 0xc0).toByte() // 110xxxxx
-          tail.data[tail.limit + 1] = (c       and 0x3f or 0x80).toByte() // 10xxxxxx
-          /* ktlint-enable no-multi-spaces */
-          tail.limit += 2
-          size += 2L
-          i++
+          data[tailLimit++] = (c shr 6          or 0xc0).toByte() // 110xxxxx
+          data[tailLimit++] = (c       and 0x3f or 0x80).toByte() // 10xxxxxx
         }
 
         c < 0xd800 || c > 0xdfff -> {
           // Emit a 16-bit character with 3 bytes.
-          val tail = writableSegment(3)
-          /* ktlint-disable no-multi-spaces */
-          tail.data[tail.limit    ] = (c shr 12          or 0xe0).toByte() // 1110xxxx
-          tail.data[tail.limit + 1] = (c shr  6 and 0x3f or 0x80).toByte() // 10xxxxxx
-          tail.data[tail.limit + 2] = (c        and 0x3f or 0x80).toByte() // 10xxxxxx
-          /* ktlint-enable no-multi-spaces */
-          tail.limit += 3
-          size += 3L
-          i++
+          data[tailLimit++] = (c shr 12          or 0xe0).toByte() // 1110xxxx
+          data[tailLimit++] = (c shr  6 and 0x3f or 0x80).toByte() // 10xxxxxx
+          data[tailLimit++] = (c        and 0x3f or 0x80).toByte() // 10xxxxxx
         }
 
         else -> {
           // c is a surrogate. Make sure it is a high surrogate & that its successor is a low
           // surrogate. If not, the UTF-16 is invalid, in which case we emit a replacement
           // character.
-          val low = (if (i + 1 < endIndex) string[i + 1].toInt() else 0)
+          val low = (if (i < endIndex) string[i].toInt() else 0)
           if (c > 0xdbff || low !in 0xdc00..0xdfff) {
-            writeByte('?'.toInt())
-            i++
+            data[tailLimit++] = '?'.toByte()
           } else {
+            i++
             // UTF-16 high surrogate: 110110xxxxxxxxxx (10 bits)
             // UTF-16 low surrogate:  110111yyyyyyyyyy (10 bits)
             // Unicode code point:    00010000000000000000 + xxxxxxxxxxyyyyyyyyyy (21 bits)
             val codePoint = 0x010000 + (c and 0x03ff shl 10 or (low and 0x03ff))
 
             // Emit a 21-bit character with 4 bytes.
-            val tail = writableSegment(4)
-            /* ktlint-disable no-multi-spaces */
-            tail.data[tail.limit    ] = (codePoint shr 18          or 0xf0).toByte() // 11110xxx
-            tail.data[tail.limit + 1] = (codePoint shr 12 and 0x3f or 0x80).toByte() // 10xxxxxx
-            tail.data[tail.limit + 2] = (codePoint shr  6 and 0x3f or 0x80).toByte() // 10xxyyyy
-            tail.data[tail.limit + 3] = (codePoint        and 0x3f or 0x80).toByte() // 10yyyyyy
-            /* ktlint-enable no-multi-spaces */
-            tail.limit += 4
-            size += 4L
-            i += 2
+            data[tailLimit++] = (codePoint shr 18          or 0xf0).toByte() // 11110xxx
+            data[tailLimit++] = (codePoint shr 12 and 0x3f or 0x80).toByte() // 10xxxxxx
+            data[tailLimit++] = (codePoint shr  6 and 0x3f or 0x80).toByte() // 10xxyyyy
+            data[tailLimit++] = (codePoint        and 0x3f or 0x80).toByte() // 10yyyyyy
           }
         }
       }
+      /* ktlint-enable no-multi-spaces */
     }
+
+    // Flush the limit local to the segment.
+    tail.limit = tailLimit
+    size += (tailLimit - tailOriginalLimit)
 
     return this
   }
@@ -2204,5 +2203,7 @@ class Buffer : BufferedSource, BufferedSink, Cloneable, ByteChannel {
 
   companion object {
     private val DIGITS = "0123456789abcdef".toByteArray()
+    /** The maximum number of bytes in a segment that can still accept any UTF-8 code point. */
+    private const val WRITE_CODE_POINT_LIMIT = Segment.SIZE - 4
   }
 }
